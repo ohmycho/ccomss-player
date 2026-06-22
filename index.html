@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CCOMSS 광교 1st 앨범 플레이어</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Pretendard', -apple-system, sans-serif;
+      background: #0B0F19;
+      color: #F3F4F6;
+      margin: 0;
+      overflow-x: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .cd-spinning { animation: spin 15s linear infinite; }
+    .cd-paused { animation-play-state: paused; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    .app-container {
+      width: 100%;
+      max-width: 400px;
+      height: 100vh;
+      max-height: 850px;
+      background: #111827;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    }
+    @media (min-width: 480px) {
+      .app-container {
+        height: 90vh;
+        border-radius: 40px;
+        border: 8px solid #1E293B;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- 탑바 -->
+    <header class="flex justify-between items-center p-6 z-10 relative">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></span>
+        <span class="text-xs font-bold tracking-widest text-slate-400 uppercase">CCOMSS LIVE</span>
+      </div>
+    </header>
+
+    <!-- CD 회전 및 조명 영역 -->
+    <div class="relative flex justify-center items-center py-6 flex-shrink-0">
+      <div id="glow-light" class="absolute w-64 h-64 rounded-full bg-gradient-to-r from-blue-600 to-amber-600 opacity-30 blur-3xl transition-all duration-1000"></div>
+      <div id="cd-vinyl" class="w-64 h-64 rounded-full bg-[#080B13] border-4 border-slate-900 flex justify-center items-center relative shadow-[0_15px_35px_rgba(0,0,0,0.6)] cd-spinning cd-paused ring-8 ring-slate-800/50">
+        <div class="absolute inset-2 rounded-full border border-slate-800/40"></div>
+        <div class="absolute inset-6 rounded-full border border-slate-800/30"></div>
+        <div class="absolute inset-12 rounded-full border border-slate-800/20"></div>
+        <div id="album-cover" class="w-28 h-28 rounded-full bg-gradient-to-tr from-blue-700 via-slate-800 to-amber-500 p-1 flex justify-center items-center relative overflow-hidden transition-all duration-1000 shadow-inner">
+          <div class="absolute inset-0 bg-black/10"></div>
+          <div class="w-8 h-8 rounded-full bg-[#080B13] border-2 border-slate-950 z-10 flex items-center justify-center shadow-md">
+            <div class="w-2.5 h-2.5 rounded-full bg-slate-900"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 곡 정보 표시 -->
+    <div class="text-center px-6 mt-4 mb-6 z-10">
+      <div id="track-tag" class="inline-block px-3 py-1 mb-3 rounded-full bg-indigo-950/80 border border-indigo-900/50 text-[10px] font-black tracking-widest text-indigo-300 uppercase transition-all duration-500">
+        Acoustic Folk
+      </div>
+      <h2 id="track-title" class="text-2xl font-black tracking-tight text-white line-clamp-1 transition-all duration-500">
+        아늑한 다락방
+      </h2>
+      <p id="track-desc" class="text-sm text-slate-400 mt-1 line-clamp-1 transition-all duration-500">
+        엄마들을 위한 따뜻한 위로의 편지
+      </p>
+    </div>
+
+    <!-- 진행바 -->
+    <div class="px-6 mb-6 z-10">
+      <div id="progress-container" class="h-2 bg-slate-800 rounded-full cursor-pointer relative overflow-hidden">
+        <div id="progress-bar" class="h-full bg-white rounded-full w-0 pointer-events-none transition-all duration-100"></div>
+      </div>
+      <div class="flex justify-between text-[11px] font-bold text-slate-500 mt-2">
+        <span id="current-time">0:00</span>
+        <span id="duration-time">0:00</span>
+      </div>
+    </div>
+
+    <!-- 플레이 컨트롤러 -->
+    <div class="flex justify-center items-center gap-8 px-6 mb-8 z-10">
+      <button id="btn-prev" class="text-slate-300 hover:text-white transition-colors p-2 active:scale-90">
+        <svg class="h-10 w-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+      <button id="btn-play-pause" class="w-20 h-20 rounded-full bg-white text-slate-900 flex justify-center items-center shadow-[0_8px_25px_rgba(255,255,255,0.2)] transition-all duration-300 transform active:scale-95">
+        <svg id="icon-play" class="h-10 w-10 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="icon-pause" class="h-10 w-10 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      </button>
+      <button id="btn-next" class="text-slate-300 hover:text-white transition-colors p-2 active:scale-90">
+        <svg class="h-10 w-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+      </button>
+    </div>
+
+    <!-- 플레이리스트 -->
+    <div class="flex-1 overflow-y-auto px-4 pb-6 z-10">
+      <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2 mb-2">Up Next</h3>
+      <div id="playlist" class="space-y-1"></div>
+    </div>
+  </div>
+
+  <audio id="audio-player"></audio>
+
+  <script>
+    const TRACKS = [
+      { id: 1, type: 'parents', tag: 'Warm Acoustic Folk',  title: '아늑한 다락방',            desc: '엄마들을 위한 따뜻한 위로의 편지',         url: './music/01_아늑한다락방.mp3' },
+      { id: 2, type: 'parents', tag: 'Acoustic Ballad',     title: '천천히, 너의 계절에',    desc: '아이의 속도를 존중하는 따뜻한 위로',       url: './music/02_천천히너의계절에.mp3' },
+      { id: 3, type: 'parents', tag: 'Jazz Bossa Nova',     title: '완벽하지 않아도 괜찮아요', desc: '좋은 부모 강박을 내려놓는 세련된 재즈',   url: './music/03_완벽하지않아도괜찮아요.mp3' },
+      { id: 4, type: 'parents', tag: 'Orchestral Pop',      title: '우리의 기적',            desc: '서로의 우주가 되는 매일 밤의 기적',        url: './music/04_우리의기적.mp3' },
+      { id: 5, type: 'parents', tag: 'Modern Folk Rock',    title: '저마다의 계절',          desc: '천천히 피어나는 아이의 손을 잡아주며',     url: './music/05_저마다의계절.mp3' },
+      { id: 6, type: 'parents', tag: 'Cozy City Pop',       title: '오렌지빛 전등',          desc: '워킹맘, 워킹대디를 위한 다락방 시티팝',   url: './music/06_오렌지빛전등.mp3' },
+      { id: 7, type: 'kids',    tag: 'Energy Electro-Pop',  title: '에러는 그냥 데이터일 뿐', desc: '실수를 성장의 원동력으로 즐기는 당당함',  url: './music/07_에러는그냥데이터일뿐.mp3' },
+      { id: 8, type: 'kids',    tag: 'Future Bass',         title: '메타인지 GPS',           desc: '스스로 생각하는 생각의 힘을 일깨우는 곡',  url: './music/08_메타인지GPS.mp3' },
+      { id: 9, type: 'kids',    tag: 'Bubblegum Pop',       title: '공간을 누비는 눈',       desc: '도형과 공간을 디자인해 나가는 청량 댄스곡', url: './music/09_공간을누비는눈.mp3' },
+      { id:10, type: 'kids',    tag: 'Retro Disco-Pop',     title: '우리는 꼼즈 스쿼드',     desc: '협동하는 보드게임의 즐거움을 담은 디스코',  url: './music/10_우리는꼼즈스쿼드.mp3' }
+    ];
+
+    let currentIdx = 0;
+    let isPlaying = false;
+    const audio = document.getElementById('audio-player');
+    const playBtn = document.getElementById('btn-play-pause');
+    const iconPlay = document.getElementById('icon-play');
+    const iconPause = document.getElementById('icon-pause');
+    const cdVinyl = document.getElementById('cd-vinyl');
+    const progressBar = document.getElementById('progress-bar');
+    const progressContainer = document.getElementById('progress-container');
+    const playlistEl = document.getElementById('playlist');
+
+    function loadTrack(index) {
+      if (index < 0) index = TRACKS.length - 1;
+      if (index >= TRACKS.length) index = 0;
+      currentIdx = index;
+      const track = TRACKS[currentIdx];
+
+      document.getElementById('track-title').textContent = track.title;
+      document.getElementById('track-desc').textContent = track.desc;
+      const tagEl = document.getElementById('track-tag');
+      tagEl.textContent = track.tag;
+
+      const glow = document.getElementById('glow-light');
+      const cover = document.getElementById('album-cover');
+
+      if (track.type === 'parents') {
+        glow.className = "absolute w-64 h-64 rounded-full bg-gradient-to-r from-blue-600 to-amber-600 opacity-30 blur-3xl transition-all duration-1000";
+        cover.className = "w-28 h-28 rounded-full bg-gradient-to-tr from-blue-700 via-slate-800 to-amber-500 p-1 flex justify-center items-center relative overflow-hidden transition-all duration-1000 shadow-inner";
+        tagEl.className = "inline-block px-3 py-1 mb-3 rounded-full bg-indigo-950/80 border border-indigo-900/50 text-[10px] font-black tracking-widest text-indigo-300 uppercase transition-all duration-500";
+      } else {
+        glow.className = "absolute w-64 h-64 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 opacity-30 blur-3xl transition-all duration-1000";
+        cover.className = "w-28 h-28 rounded-full bg-gradient-to-tr from-rose-600 via-pink-600 to-orange-400 p-1 flex justify-center items-center relative overflow-hidden transition-all duration-1000 shadow-inner";
+        tagEl.className = "inline-block px-3 py-1 mb-3 rounded-full bg-rose-950/80 border border-rose-900/50 text-[10px] font-black tracking-widest text-rose-300 uppercase transition-all duration-500";
+      }
+
+      audio.src = track.url;
+      audio.load();
+      renderPlaylist();
+      if (isPlaying) audio.play();
+    }
+
+    function togglePlay() {
+      if (audio.paused) {
+        audio.play()
+          .then(() => { isPlaying = true; updatePlayState(); })
+          .catch(e => console.log("재생 오류:", e));
+      } else {
+        audio.pause();
+        isPlaying = false;
+        updatePlayState();
+      }
+    }
+
+    function updatePlayState() {
+      if (isPlaying) {
+        iconPlay.classList.add('hidden');
+        iconPause.classList.remove('hidden');
+        cdVinyl.classList.remove('cd-paused');
+      } else {
+        iconPlay.classList.remove('hidden');
+        iconPause.classList.add('hidden');
+        cdVinyl.classList.add('cd-paused');
+      }
+    }
+
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return "0:00";
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function renderPlaylist() {
+      playlistEl.innerHTML = '';
+      TRACKS.forEach((t, i) => {
+        const isCur = (i === currentIdx);
+        const div = document.createElement('div');
+        div.className = `flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${isCur ? 'bg-white/10' : 'hover:bg-white/5'}`;
+        div.innerHTML = `
+          <div class="text-xs font-bold w-4 text-center ${isCur ? 'text-white' : 'text-slate-500'}">${i + 1}</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold truncate ${isCur ? 'text-white' : 'text-slate-300'}">${t.title}</div>
+            <div class="text-xs text-slate-500 truncate">${t.desc}</div>
+          </div>
+          ${isCur && isPlaying ? '<div class="w-3 h-3 bg-rose-500 rounded-full animate-pulse"></div>' : ''}
+        `;
+        div.onclick = () => {
+          if (i === currentIdx) togglePlay();
+          else { isPlaying = true; loadTrack(i); }
+        };
+        playlistEl.appendChild(div);
+      });
+    }
+
+    playBtn.addEventListener('click', togglePlay);
+    document.getElementById('btn-prev').addEventListener('click', () => { isPlaying = true; loadTrack(currentIdx - 1); });
+    document.getElementById('btn-next').addEventListener('click', () => { isPlaying = true; loadTrack(currentIdx + 1); });
+
+    audio.addEventListener('timeupdate', () => {
+      document.getElementById('current-time').textContent = formatTime(audio.currentTime);
+      if (audio.duration) {
+        document.getElementById('duration-time').textContent = formatTime(audio.duration);
+        progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+      }
+    });
+
+    audio.addEventListener('ended', () => { loadTrack(currentIdx + 1); });
+
+    progressContainer.addEventListener('click', (e) => {
+      if (audio.duration) {
+        audio.currentTime = (e.offsetX / progressContainer.clientWidth) * audio.duration;
+      }
+    });
+
+    window.onload = () => { loadTrack(0); };
+  </script>
+</body>
+</html>
