@@ -172,7 +172,9 @@
         tagEl.className = "inline-block px-3 py-1 mb-3 rounded-full bg-rose-950/80 border border-rose-900/50 text-[10px] font-black tracking-widest text-rose-300 uppercase transition-all duration-500";
       }
 
-      audio.src = track.url;
+      const parts = track.url.split('/');
+      const encodedFilename = encodeURIComponent(parts[parts.length - 1]);
+      audio.src = parts.slice(0, -1).join('/') + '/' + encodedFilename;
       audio.load();
       renderPlaylist();
       if (isPlaying) audio.play();
