@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CCOMSS 광교 1st 앨범 플레이어</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CCOMSS">
+  <meta name="theme-color" content="#111827">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
   <style>
@@ -252,6 +258,13 @@
     });
 
     window.onload = () => { loadTrack(0); };
+
+    // PWA 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('CCOMSS PWA 준비 완료!'))
+        .catch(err => console.log('SW 등록 실패:', err));
+    }
   </script>
 </body>
 </html>
